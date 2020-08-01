@@ -1,0 +1,90 @@
+from tkinter import *
+from tkinter import messagebox
+from tkinter import filedialog
+from keras.models import load_model
+from PIL import Image,ImageTk
+import tkinter as tk
+import matplotlib.pyplot as plt
+import cv2
+import numpy as np
+import os
+import pandas
+
+
+model = load_model(r'C:\Users\Admin\Desktop\Glaucoma\Project\f1.h5')
+
+
+
+def autoroi(img):
+
+    gray_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+    thresh = cv2.threshold(gray_img, 130, 255, cv2.THRESH_BINARY)[1]
+    thresh = cv2.dilate(thresh, None, iterations=5)
+
+    contours, hierarchy = cv2.findContours(
+        thresh.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+    biggest = max(contours, key=cv2.contourArea)
+    x, y, w, h = cv2.boundingRect(biggest)
+    cv2.rectangle(img, (x, y), (x+w, y+h), (0, 255, 0), 2)
+    roi = img[y:y+h, x:x+w]
+    print(roi)
+    return roi
+
+
+def prediction(filename):
+    
+    img = cv2.imread(filename)
+    img = autoroi(img)
+    img = cv2.resize(img, (256, 256))
+    img = np.reshape(img, [1, 256, 256, 3])
+
+    prob = model.predict(img)
+    Class = prob.argmax(axis=-1)
+    print(prob*100)
+    print(Class)
+    return(prob*100,Class)
+
+
+def run(filename):
+
+    prob,Class = prediction(filename)
+    print(prob)
+    if (Class == 0):
+        messagebox.showinfo('Prediction', 'You have been diagnosed with Glaucoma')
+    else:
+        messagebox.showinfo('Prediction', 'Congratulations! You are Healthy')
+
+
+
+def open_img(): 
+
+    filename = filedialog.askopenfilename(title ='FILES')
+    print(filename)
+    img = Image.open(filename)
+    img = img.resize((500, 500), Image.ANTIALIAS)
+    img = ImageTk.PhotoImage(img)
+    panel = Label(window, image = img)
+    panel.image = img
+    panel.grid(row = 1) 
+    run(filename)
+
+window = Tk()
+window.title("Glaucoma Detection")
+window.geometry('750x750')
+window.resizable(width = True, height = True) 
+window.configure(background='grey')
+
+
+l1 = Label(window, text="Test Image", font=("Arial", 20), padx=10, bg='grey')
+l1.grid(row=0, column=0)
+
+b1 = Button(window, text='RUN', font=("Arial", 20), command=run,fg='blue')
+b1.place(x=600,y=40)
+
+b2 = Button(window, text ='IMAGE',font=("Arial", 20), command = open_img, fg='blue')
+b2.place(x=600,y=250)
+
+
+window.mainloop()

@@ -1,0 +1,12 @@
+Class 0- Glaucoma
+Class 1-Non Glaucoma
+
+---------------------
+
+f1.h5 is the model
+
+for showing output :
+
+dataset/validation/glaucoma/glaucoma.2005
+dataset/validation/non_glaucoma/non_glaucoma.2014
+
